@@ -30,7 +30,7 @@ A terminal-based interactive blog viewer built in Python, fetching posts and pro
 
 ## Requirements
 
-* Python 3.10+
+* [Python 3.10+](https://www.python.org/downloads/release/python-3100/)
 * [requests](https://pypi.org/project/requests/)
 * [beautifulsoup4](https://pypi.org/project/beautifulsoup4/)
 * [rich](https://pypi.org/project/rich/)
