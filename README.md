@@ -6,6 +6,8 @@ A terminal-based interactive blog viewer built in Python, fetching posts and pro
   <img src="https://github.com/viztini/viz-tui/blob/main/boot.png" alt="example">
 </p>
 
+---
+
 <p align="center">
   <img src="https://github.com/viztini/viz-tui/blob/main/example.png" alt="example2">
 </p>
