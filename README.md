@@ -1,6 +1,6 @@
 # viz-tui
 
-A terminal-based interactive blog viewer built in Python, fetching posts and profile data from a my live website. Navigate your favorite tech posts and view user profile info in a retro-futuristic terminal interface.
+A terminal-based interactive blog viewer built in Python, fetching posts and profile data from my live website. Navigate your favorite tech posts and view user profile info in a retro-futuristic terminal interface.
 
 <p align="center">
   <img src="https://github.com/viztini/viz-tui/blob/main/boot.png" alt="example">
