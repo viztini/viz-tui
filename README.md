@@ -6,7 +6,7 @@ A terminal-based interactive blog viewer built in Python, fetching posts and pro
 
 ## Features
 
-* Fetches blog posts from [Viztini’s website](https://viztini.github.io/) using `requests` and `BeautifulSoup`.
+* Fetches blog posts from [my website](https://viztini.github.io/) using `requests` and `BeautifulSoup`.
 * Displays posts and user profile in a clean, terminal-friendly layout using [Rich](https://github.com/Textualize/rich).
 * Supports interactive navigation:
 
