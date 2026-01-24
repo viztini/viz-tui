@@ -99,5 +99,3 @@ blog.py          # Main application script
 This project is licensed with the MIT License
 
 ---
-
-If you want, I can also make a **much shorter, “minimalist hacker vibe” README** that matches the terminal aesthetic of your code—it’d look way cooler in GitHub. Do you want me to do that too?
