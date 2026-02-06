@@ -1,7 +1,6 @@
 import requests
 import time
 import readchar
-import os
 from bs4 import BeautifulSoup
 from rich.console import Console
 from rich.layout import Layout
@@ -12,29 +11,31 @@ from rich.live import Live
 
 BASE_URL = "https://viztini.github.io/"
 ABOUT_URL = "https://viztini.github.io/about.html"
+POSTS_URL = "https://viztini.github.io/posts.json"
 console = Console()
 
 def fetch_data():
     posts, about = [], {}
     try:
-        r = requests.get(BASE_URL, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
-        for post in soup.select("article.blog-post"):
-            raw_tags = [t.get_text(strip=True) for t in post.select(".tag")]
-            clean_tags = [tag if tag.startswith("#") else f"#{tag}" for tag in raw_tags]
-            
+        r = requests.get(POSTS_URL, timeout=10)
+        r.raise_for_status()
+        raw_posts = r.json()
+        raw_posts.sort(key=lambda p: (not p.get("pinned", False), p.get("date", "")), reverse=False)
+        for p in raw_posts:
             posts.append({
-                "title": post.select_one(".post-header h3").get_text(strip=True),
-                "date": post.select_one(".post-date").get_text(strip=True),
-                "content": post.select_one(".post-content").get_text("\n", strip=True),
-                "tags": clean_tags
+                "title": p["title"],
+                "date": p["date"],
+                "content": p["content"],
+                "tags": p.get("tags", [])
             })
-        
         ra = requests.get(ABOUT_URL, timeout=10)
+        ra.raise_for_status()
         soupa = BeautifulSoup(ra.text, "html.parser")
+        terminal_pre = soupa.select_one(".terminal-content pre")
+        bio_paragraphs = [p.get_text(strip=True) for p in soupa.select("#tab-general p") if p.get_text(strip=True)]
         about = {
-            "terminal": soupa.select_one(".terminal-content pre").get_text(strip=True),
-            "text": [p.get_text(strip=True) for p in soupa.select(".content-box .text-content p")]
+            "terminal": terminal_pre.get_text(strip=True) if terminal_pre else "SYSTEM OFFLINE",
+            "text": bio_paragraphs
         }
     except Exception as e:
         posts = [{"title": "Connection Error", "date": "---", "content": str(e), "tags": []}]
@@ -51,7 +52,6 @@ def boot_sequence():
 "No matter where you go, everyone's connected."
 
 STATUS: ONLINE""", style="bold green")
-    
     console.clear()
     console.print("\n")
     console.print(Align.center(Panel(boot_msg, border_style="green", padding=(1, 5), expand=False)))
@@ -78,14 +78,11 @@ def main():
 
     with Live(layout, refresh_per_second=10, screen=True):
         while True:
-            # --- Header / Nav Bar ---
             nav = Text(" viztini's tech blog ", style="bold black on cyan")
             nav.append("  ")
             nav.append(" [ HOME ] ", style="bold green" if page == "home" else "dim white")
             nav.append(" [ ABOUT ] ", style="bold green" if page == "about" else "dim white")
             layout["header"].update(Align.left(nav))
-
-            # --- Footer ---
             layout["footer"].update(Panel(Align.center(Text("[TAB] Toggle View  |  [ARROWS] Navigate  |  [Q] Quit", style="bold green")), border_style="green"))
 
             if page == "home":
@@ -102,15 +99,11 @@ def main():
                 t_cont.append(f"{curr['date']}\n", style="italic yellow dim")
                 t_cont.append("─" * 30 + "\n\n", style="dim")
                 t_cont.append(f"{curr['content']}\n\n")
-                
                 if curr['tags']:
                     t_cont.append(" ".join(curr['tags']), style="bold magenta")
-
                 layout["content"].update(Panel(t_cont, title="Post Viewer", border_style="green", padding=(1, 2)))
-            
             else:
                 layout["sidebar"].update(Panel("SYSTEM PROFILE\n\nIdentity: viztini\nLocation: the wired\nStatus: Online", border_style="magenta"))
-                
                 t_about = Text(f"{about['terminal']}\n\n", style="green")
                 for p in about['text']:
                     if "> printf" in p or "Hello, World!" in p:
@@ -124,14 +117,12 @@ def main():
                 break
             elif key == readchar.key.TAB:
                 page = "about" if page == "home" else "home"
-            
             if page == "home":
                 if key in (readchar.key.DOWN, "j"):
                     selected = min(selected + 1, len(posts) - 1)
                 elif key in (readchar.key.UP, "k"):
                     selected = max(selected - 1, 0)
 
-    # --- Shutdown Sequence ---
     console.clear()
     exit_msg = Text("\nthank you for visiting viztini's tech blog <3", style="bold magenta")
     console.print(Align.center(exit_msg))
