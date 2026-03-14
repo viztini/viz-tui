@@ -1,6 +1,7 @@
 import requests
 import time
 import readchar
+import re
 from bs4 import BeautifulSoup
 from rich.console import Console
 from rich.layout import Layout
@@ -9,18 +10,18 @@ from rich.text import Text
 from rich.align import Align
 from rich.live import Live
 
-BASE_URL = "https://viztini.github.io/"
-ABOUT_URL = "https://viztini.github.io/about.html"
+BASE_URL = "https://viztini.github.io/index.html"
 POSTS_URL = "https://viztini.github.io/posts.json"
+STATUS_URL = "https://viztini.github.io/status.json"
 console = Console()
 
 def fetch_data():
-    posts, about = [], {}
+    posts, about, status = [], {}, {}
     try:
         r = requests.get(POSTS_URL, timeout=10)
         r.raise_for_status()
         raw_posts = r.json()
-        raw_posts.sort(key=lambda p: (not p.get("pinned", False), p.get("date", "")), reverse=False)
+        raw_posts.sort(key=lambda p: (p.get("pinned", False), p.get("date", "")), reverse=True)
         for p in raw_posts:
             posts.append({
                 "title": p["title"],
@@ -28,19 +29,38 @@ def fetch_data():
                 "content": p["content"],
                 "tags": p.get("tags", [])
             })
-        ra = requests.get(ABOUT_URL, timeout=10)
+        
+        ra = requests.get(BASE_URL, timeout=10)
         ra.raise_for_status()
         soupa = BeautifulSoup(ra.text, "html.parser")
+        
         terminal_pre = soupa.select_one(".terminal-content pre")
-        bio_paragraphs = [p.get_text(strip=True) for p in soupa.select("#tab-general p") if p.get_text(strip=True)]
+
+        bio_lines = []
+        readme_h2 = soupa.find("h2", string=lambda x: x and "README.md" in x)
+        if readme_h2:
+            readme_container = readme_h2.find_next_sibling("div")
+            if readme_container:
+                for element in readme_container.find_all(["p", "li"]):
+                    text = element.get_text(separator=" ", strip=True)
+                    text = re.sub(r"\s+", " ", text)
+                    if text:
+                        prefix = "- " if element.name == "li" else ""
+                        bio_lines.append(f"{prefix}{text}")
+        
         about = {
             "terminal": terminal_pre.get_text(strip=True) if terminal_pre else "SYSTEM OFFLINE",
-            "text": bio_paragraphs
+            "text": bio_lines if bio_lines else ["No readme data found."]
         }
+
+        rs = requests.get(STATUS_URL, timeout=10)
+        rs.raise_for_status()
+        status = rs.json()
     except Exception as e:
         posts = [{"title": "Connection Error", "date": "---", "content": str(e), "tags": []}]
-        about = {"terminal": "OFFLINE", "text": ["Check your connection."]}
-    return posts, about
+        about = {"terminal": "OFFLINE", "text": [f"Error: {str(e)}", "Check your connection."]}
+        status = {"status_text": "OFFLINE", "date": "---", "time": "---"}
+    return posts, about, status
 
 def boot_sequence():
     boot_msg = Text("""> SYSTEM BOOT...
@@ -72,7 +92,7 @@ def make_layout():
 
 def main():
     boot_sequence()
-    posts, about = fetch_data()
+    posts, about, status = fetch_data()
     selected, page = 0, "home"
     layout = make_layout()
 
@@ -102,8 +122,11 @@ def main():
                 if curr['tags']:
                     t_cont.append(" ".join(curr['tags']), style="bold magenta")
                 layout["content"].update(Panel(t_cont, title="Post Viewer", border_style="green", padding=(1, 2)))
-            else:
-                layout["sidebar"].update(Panel("SYSTEM PROFILE\n\nIdentity: viztini\nLocation: the wired\nStatus: Online", border_style="magenta"))
+            elif page == "about":
+                sidebar_text = f"SYSTEM PROFILE\n\nIdentity: viztini\nLocation: the wired\nStatus: Online\n\n"
+                sidebar_text += f"LATEST STATUS ({status.get('date', '---')} {status.get('time', '---')}):\n"
+                sidebar_text += f"{status.get('status_text', 'No status available')}"
+                layout["sidebar"].update(Panel(sidebar_text, border_style="magenta"))
                 t_about = Text(f"{about['terminal']}\n\n", style="green")
                 for p in about['text']:
                     if "> printf" in p or "Hello, World!" in p:
