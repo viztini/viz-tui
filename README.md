@@ -77,7 +77,7 @@ python main.py
 ## Project Structure
 
 ```
-blog.py          # Main application script
+main.py          # Main application script (bit obvious)
 ```
 
 * `fetch_data()` — Retrieves posts and about info from the website.
