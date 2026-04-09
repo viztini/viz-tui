@@ -50,7 +50,7 @@ def fetch_data():
         
         about = {
             "terminal": terminal_pre.get_text(strip=True) if terminal_pre else "SYSTEM OFFLINE",
-            "text": bio_lines if bio_lines else ["No readme data found."]
+            "text": bio_lines if bio_lines else ["No README data found."]
         }
 
         rs = requests.get(STATUS_URL, timeout=10)
